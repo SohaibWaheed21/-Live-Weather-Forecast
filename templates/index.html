@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Chatbot</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(to bottom, #ABE0F0 0%, #e8f7fc 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Pixelated Cloud Animations */
+        .cloud {
+            position: absolute;
+            background: white;
+            box-shadow: 
+                10px 0 0 0 white,
+                20px 0 0 0 white,
+                30px 0 0 0 white,
+                40px 0 0 0 white,
+                0 10px 0 0 white,
+                10px 10px 0 0 white,
+                20px 10px 0 0 white,
+                30px 10px 0 0 white,
+                40px 10px 0 0 white,
+                50px 10px 0 0 white,
+                -10px 10px 0 0 white,
+                10px 20px 0 0 white,
+                20px 20px 0 0 white,
+                30px 20px 0 0 white,
+                40px 20px 0 0 white;
+            width: 10px;
+            height: 10px;
+            animation: float 20s infinite linear;
+            opacity: 0.7;
+        }
+
+        .cloud1 { top: 50px; left: -100px; animation-duration: 25s; }
+        .cloud2 { top: 150px; left: -150px; animation-duration: 30s; animation-delay: 5s; }
+        .cloud3 { top: 250px; left: -120px; animation-duration: 35s; animation-delay: 10s; }
+        .cloud4 { top: 80px; left: -180px; animation-duration: 28s; animation-delay: 2s; }
+
+        @keyframes float {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(calc(100vw + 200px)); }
+        }
+
+        /* Sun */
+        .sun {
+            position: absolute;
+            top: 30px;
+            right: 50px;
+            width: 60px;
+            height: 60px;
+            background: #FFD700;
+            box-shadow: 
+                0 0 0 5px #FFD700,
+                0 -15px 0 0 #FFD700,
+                15px 0 0 0 #FFD700,
+                0 15px 0 0 #FFD700,
+                -15px 0 0 0 #FFD700,
+                10px -10px 0 0 #FFD700,
+                10px 10px 0 0 #FFD700,
+                -10px 10px 0 0 #FFD700,
+                -10px -10px 0 0 #FFD700;
+            animation: rotate 10s linear infinite;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Header */
+        h1 {
+            text-align: center;
+            color: white;
+            font-size: 3em;
+            padding: 40px 20px 20px;
+            text-shadow: 3px 3px 0 #8bc9e0;
+            position: relative;
+            z-index: 10;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: white;
+            font-size: 1.2em;
+            margin-top: -10px;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 0 #8bc9e0;
+            animation: fadeInDown 1. 2s ease-out;
+        }
+
+        /* Weather Icons Container */
+        .weather-icons {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Pixelated Raindrops */
+        .raindrop {
+            position: absolute;
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(to bottom, #ABE0F0, transparent);
+            animation: rain 2s linear infinite;
+            opacity: 0.3;
+        }
+
+        @keyframes rain {
+            0% { transform: translateY(-100px); }
+            100% { transform: translateY(100vh); }
+        }
+
+        .raindrop:nth-child(1) { left: 10%; animation-delay: 0s; }
+        .raindrop:nth-child(2) { left: 25%; animation-delay: 0. 3s; }
+        .raindrop:nth-child(3) { left: 40%; animation-delay: 0.7s; }
+        .raindrop:nth-child(4) { left: 55%; animation-delay: 0.4s; }
+        .raindrop:nth-child(5) { left: 70%; animation-delay: 0.9s; }
+        .raindrop:nth-child(6) { left: 85%; animation-delay: 0.2s; }
+
+        /* Main Container */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Chatbox */
+        #chatbox {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            height: 500px;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+            border: 5px solid #ABE0F0;
+            animation: slideInUp 0.8s ease-out;
+            scroll-behavior: smooth;
+        }
+
+        #chatbox::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        #chatbox::-webkit-scrollbar-track {
+            background: #f0f0f0;
+            border-radius: 10px;
+        }
+
+        #chatbox::-webkit-scrollbar-thumb {
+            background: #ABE0F0;
+            border-radius: 10px;
+        }
+
+        #chatbox::-webkit-scrollbar-thumb:hover {
+            background: #8bc9e0;
+        }
+
+        /* Bot Messages */
+        .botText {
+            margin: 20px 0;
+            animation: messageSlideIn 0.5s ease-out;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .botText::before {
+            content: "🤖";
+            font-size: 24px;
+            margin-right: 10px;
+            animation: bounce 2s infinite;
+        }
+
+        .botText span {
+            background: #ABE0F0;
+            color: #2c3e50;
+            padding: 15px 20px;
+            border-radius: 20px 20px 20px 5px;
+            display: inline-block;
+            max-width: 80%;
+            line-height: 1.6;
+            box-shadow: 0 3px 10px rgba(171, 224, 240, 0.3);
+            font-size: 16px;
+            animation: bubblePop 0.3s ease-out;
+        }
+
+        /* User Messages */
+        .userText {
+            text-align: right;
+            margin: 20px 0;
+            animation: messageSlideIn 0.5s ease-out;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-end;
+        }
+
+        .userText::after {
+            content: "👤";
+            font-size: 24px;
+            margin-left: 10px;
+        }
+
+        .userText span {
+            background: white;
+            color: #2c3e50;
+            padding: 15px 20px;
+            border-radius: 20px 20px 5px 20px;
+            display: inline-block;
+            max-width: 80%;
+            line-height: 1.6;
+            border: 3px solid #ABE0F0;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            font-size: 16px;
+            animation: bubblePop 0.3s ease-out;
+        }
+
+        /* User Input Container */
+        #userInput {
+            background: white;
+            border-radius: 50px;
+            padding: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            display: flex;
+            gap: 10px;
+            border: 5px solid #ABE0F0;
+            animation: slideInUp 1s ease-out;
+        }
+
+        #textInput {
+            flex: 1;
+            border: none;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            padding: 15px 25px;
+            outline: none;
+            background: transparent;
+            color: #2c3e50;
+        }
+
+        #textInput::placeholder {
+            color: #ABE0F0;
+        }
+
+        #buttonInput {
+            padding: 15px 35px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            border: none;
+            background: #ABE0F0;
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        #buttonInput:hover {
+            background: #8bc9e0;
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(171, 224, 240, 0.5);
+        }
+
+        #buttonInput:active {
+            transform: scale(0.95);
+        }
+        #clearButton {
+    padding: 15px 30px;
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    border: none;
+    background: white;
+    color: #2c3e50;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: bold;
+    border: 3px solid #ABE0F0;
+    box-shadow: 0 5px 15px rgba(171, 224, 240, 0.4);
+}
+
+#clearButton:hover {
+    background: #ABE0F0;
+    color: white;
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(171, 224, 240, 0.6);
+}
+
+#clearButton:active {
+    transform: scale(0.95);
+}
+
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: inline-flex;
+            gap: 5px;
+            padding: 15px 20px;
+        }
+
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        /* Weather Info Styling */
+        .weather-info {
+            margin-top: 10px;
+            padding: 10px 0;
+        }
+
+        .weather-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 15px;
+        }
+
+        .weather-icon {
+            font-size: 20px;
+            margin-right: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        /* Animations */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes messageSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes bubblePop {
+            0% {
+                transform: scale(0.8);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-5px);
+            }
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.7;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            #chatbox {
+                height: 400px;
+                padding: 20px;
+            }
+
+            .container {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Weather Background Elements -->
+    <div class="sun"></div>
+    <div class="cloud cloud1"></div>
+    <div class="cloud cloud2"></div>
+    <div class="cloud cloud3"></div>
+    <div class="cloud cloud4"></div>
+    
+    <div class="weather-icons">
+        <div class="raindrop"></div>
+        <div class="raindrop"></div>
+        <div class="raindrop"></div>
+        <div class="raindrop"></div>
+        <div class="raindrop"></div>
+        <div class="raindrop"></div>
+    </div>
+
+    <!-- Main Content -->
+    <h1>☁️ Weather Chatbot ☁️</h1>
+    <div class="subtitle">Your Personal Weather Assistant</div>
+    
+    <div class="container">
+        <div id="chatbox">
+            <p class="botText"><span>Hi there! 👋</span></p>
+            <p class="botText"><span>Which city's weather forecast do you want to know?  🌍</span></p>
+        </div>
+        
+        <div id="userInput">
+            <input id="textInput" type="text" name="userMessage" placeholder="Type a city name..." />
+            <input id="buttonInput" type="submit" value="Send ✈️"/>
+            <input id="clearButton" type="button" value="Clear 🧹"/>
+        </div>
+    </div>
+
+    <script>
+$(function () {
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function getUserResponse() {
+
+    var userText = $('#textInput').val().trim();
+    if (!userText) return;
+
+    // Show user message
+    var userHTML = "<p class='userText'><span>" + escapeHtml(userText) + "</span></p>";
+    $('#chatbox').append(userHTML);
+    $('#textInput').val('');
+    $('#chatbox').scrollTop($('#chatbox')[0].scrollHeight);
+
+    // Call backend
+    $.get("/get", { userMessage: userText })
+      .done(function (data) {
+
+        let botHTML = "";
+
+        if (!data || typeof data !== "object") {
+          botHTML = "<p class='botText'><span>Invalid response from server.</span></p>";
+        }
+        else if (data.error) {
+          botHTML = "<p class='botText'><span>" + escapeHtml(data.error) + "</span></p>";
+        }
+        else {
+          botHTML =
+            "<p class='botText'><span>" +
+            //"<strong>City:</strong> " + escapeHtml(data.city_name || '') + "<br>" +
+            "<strong>Temperature:</strong> " + escapeHtml(String((data.main?.temp) || '')) + "°C<br>" +
+            "<strong>Feels Like:</strong> " + escapeHtml(String((data.main?.feels_like) || '')) + "°C<br>" +
+            "<strong>Conditions:</strong> " + escapeHtml((data.weather?.[0]?.description) || '') + "<br>" +
+            "<strong>Humidity:</strong> " + escapeHtml(String((data.main?.humidity) || '')) + "%<br>" +
+            "<strong>Wind Speed:</strong> " + escapeHtml(String((data.wind?.speed) || '')) + " m/s" +
+            "</span></p>";
+        }
+
+        // Show bot message
+        $('#chatbox').append(botHTML);
+        $('#chatbox').scrollTop($('#chatbox')[0].scrollHeight);
+
+      })
+      .fail(function () {
+        var errorHTML = "<p class='botText'><span>Sorry, something went wrong. Please try again.</span></p>";
+        $('#chatbox').append(errorHTML);
+        $('#chatbox').scrollTop($('#chatbox')[0].scrollHeight);
+      });
+  }
+
+  // ENTER KEY
+  $('#textInput').on('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      getUserResponse();
+    }
+  });
+
+  // BUTTON CLICK
+  $('#buttonInput').on('click', function () {
+    getUserResponse();
+  });
+
+  $('#clearButton').on('click', function () {
+    $('#chatbox').html(`
+        <p class="botText"><span>Hi there! 👋</span></p>
+        <p class="botText"><span>Which city's weather forecast do you want to know? 🌍</span></p>
+    `);
+    $('#textInput').val('');
+});
+});
+</script>
+
+</body>
+</html>
